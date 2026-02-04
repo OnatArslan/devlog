@@ -8,23 +8,39 @@ import (
 	"os"
 	"time"
 
+	"github.com/OnatArslan/devlog/internal/db/sqlc"
 	"github.com/OnatArslan/devlog/internal/httpx"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
+
+type config struct {
+	httpAddr string
+	dbConStr string
+}
 
 func main() {
 	ctx := context.Background()
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal(err)
 	}
 
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	pool, err := pgxpool.New(ctx, os.Getenv("PG_CON_STR"))
 
-	fmt.Println(ctx) // We need to remove it later
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer pool.Close()
+
+	queries := sqlc.New(pool)
+
+	fmt.Println(queries)
+
+	r := chi.NewRouter()
 
 	// A good base middleware stack
 	r.Use(middleware.RequestID)

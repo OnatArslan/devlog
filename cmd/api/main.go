@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,30 +17,26 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type config struct {
-	httpAddr string
-	dbConStr string
-}
-
 func main() {
 	ctx := context.Background()
 
+	// Load env variables
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
 
 	pool, err := pgxpool.New(ctx, os.Getenv("PG_CON_STR"))
-
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer pool.Close()
 
+	// Create sqlc queries struct
 	queries := sqlc.New(pool)
 
 	fmt.Println(queries)
 
+	// Create chi router
 	r := chi.NewRouter()
 
 	// A good base middleware stack
@@ -47,14 +44,19 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-
-	// Set a timeout value on the request context (ctx), that will signal
-	// through ctx.Done() that the request has timed out and further
-	// processing should be stopped.
 	r.Use(middleware.Timeout(20 * time.Second))
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		httpx.WriteJSON(w, http.StatusOK, "OK")
+	// We connect base router for api/v1
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+			httpx.WriteJSON(w, http.StatusOK, map[string]string{"STATUS": "OK"})
+		})
+
+		// r.Mount("/users")
+	})
+
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		httpx.WriteError(w, http.StatusNotFound, errors.New("this route not defined"))
 	})
 
 	http.ListenAndServe(os.Getenv("PORT"), r)

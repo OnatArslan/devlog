@@ -11,7 +11,7 @@ import (
 
 const getUsers = `-- name: GetUsers :many
 SELECT
-    id, email, password_hash, created_at, updated_at
+    id, email, username, password_hash, is_active, token_invalid_before, created_at, updated_at
 FROM
     users
 `
@@ -28,7 +28,10 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Email,
+			&i.Username,
 			&i.PasswordHash,
+			&i.IsActive,
+			&i.TokenInvalidBefore,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

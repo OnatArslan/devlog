@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/OnatArslan/devlog/internal/httpx"
 	"github.com/OnatArslan/devlog/internal/sqlc"
+	"github.com/OnatArslan/devlog/internal/user"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,7 +34,9 @@ func main() {
 	// Create sqlc queries struct
 	queries := sqlc.New(pool)
 
-	fmt.Println(queries)
+	userRepo := user.NewUserRepository(queries)
+	userSvc := user.NewUserService(userRepo)
+	userHandler := user.NewUserHandler(userSvc)
 
 	// Create chi router
 	r := chi.NewRouter()
@@ -52,13 +54,24 @@ func main() {
 			httpx.WriteJSON(w, http.StatusOK, map[string]string{"STATUS": "OK"})
 		})
 
-		// r.Mount("/users")
+		r.Mount("/users", userHandler.Routes(r))
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, http.StatusNotFound, errors.New("this route not defined"))
 	})
 
-	http.ListenAndServe(os.Getenv("PORT"), r)
+	// Start server
+	addr := os.Getenv("PORT")
+	if addr == "" {
+		log.Fatal("PORT env var is required (e.g. :8080)")
+	}
+	if addr[0] != ':' {
+		addr = ":" + addr
+	}
+
+	if err := http.ListenAndServe(addr, r); err != nil {
+		log.Fatal(err)
+	}
 
 }

@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/OnatArslan/devlog/internal/db/sqlc"
 	"github.com/OnatArslan/devlog/internal/httpx"
+	"github.com/OnatArslan/devlog/internal/sqlc"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"

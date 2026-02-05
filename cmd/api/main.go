@@ -13,9 +13,12 @@ import (
 	"github.com/OnatArslan/devlog/internal/user"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
+
+var validate *validator.Validate
 
 func main() {
 	ctx := context.Background()
@@ -34,9 +37,15 @@ func main() {
 	// Create sqlc queries struct
 	queries := sqlc.New(pool)
 
+	// Create validator object
+	validate = validator.New()
+
 	userRepo := user.NewUserRepository(queries)
 	userSvc := user.NewUserService(userRepo)
-	userHandler := user.NewUserHandler(userSvc)
+
+	user.RegisterValidations(validate)
+
+	userHandler := user.NewUserHandler(userSvc, validate)
 
 	// Create chi router
 	r := chi.NewRouter()

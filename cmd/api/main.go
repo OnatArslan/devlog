@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -40,13 +41,6 @@ func main() {
 	// Create validator object
 	validate = validator.New()
 
-	userRepo := user.NewUserRepository(queries)
-	userSvc := user.NewUserService(userRepo)
-
-	user.RegisterValidations(validate)
-
-	userHandler := user.NewUserHandler(userSvc, validate)
-
 	// Create chi router
 	r := chi.NewRouter()
 
@@ -57,12 +51,20 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(20 * time.Second))
 
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		httpx.WriteJSON(w, http.StatusOK, map[string]string{"SERVER": "RUNNING..."})
+	})
+
+	// DOMAINS --------- ----------- -----------
+	// User domain
+	userRepo := user.NewUserRepository(queries)
+	userSvc := user.NewUserService(userRepo)
+	user.RegisterValidations(validate)
+	userHandler := user.NewUserHandler(userSvc, validate)
+
 	// We connect base router for api/v1
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			httpx.WriteJSON(w, http.StatusOK, map[string]string{"STATUS": "OK"})
-		})
-
+		// user routes
 		r.Mount("/users", userHandler.Routes(r))
 	})
 
@@ -79,8 +81,8 @@ func main() {
 		addr = ":" + addr
 	}
 
+	fmt.Printf("server listening PORT %s\n", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)
 	}
-
 }

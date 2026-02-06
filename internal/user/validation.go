@@ -2,11 +2,14 @@ package user
 
 import "github.com/go-playground/validator/v10"
 
+// This function used in main.go for RegisterValidators for user in one line
+// user.RegisterValidations(validate) like this
 func RegisterValidations(v *validator.Validate) {
-	v.RegisterStructValidation(RegisterStructLevelValidation, RegisterRequest{})
+	v.RegisterStructValidation(SignUpStructLevelValidation, RegisterRequest{})
 }
 
-func RegisterStructLevelValidation(sl validator.StructLevel) {
+// This is for signUp handler
+func SignUpStructLevelValidation(sl validator.StructLevel) {
 	registerReq := sl.Current().Interface().(RegisterRequest)
 
 	if registerReq.Password != registerReq.PasswordConfirm {

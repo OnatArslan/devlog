@@ -9,38 +9,60 @@ import (
 	"context"
 )
 
-const getUsers = `-- name: GetUsers :many
-SELECT
-    id, email, username, password_hash, is_active, token_invalid_before, created_at, updated_at
-FROM
-    users
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (email, username, password_hash)
+VALUES ($1, $2, $3)
+RETURNING id, email, username, password_hash, is_active, token_invalid_before, created_at, updated_at
 `
 
-func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, getUsers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Email,
-			&i.Username,
-			&i.PasswordHash,
-			&i.IsActive,
-			&i.TokenInvalidBefore,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type CreateUserParams struct {
+	Email        string
+	Username     string
+	PasswordHash string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Username, arg.PasswordHash)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.PasswordHash,
+		&i.IsActive,
+		&i.TokenInvalidBefore,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getByEmail = `-- name: GetByEmail :one
+SELECT
+  u.id,
+  u.email,
+  u.username,
+  u.password_hash,
+  u.is_active,
+  u.token_invalid_before,
+  u.created_at,
+  u.updated_at
+FROM users u
+WHERE u.email = $1
+`
+
+func (q *Queries) GetByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.PasswordHash,
+		&i.IsActive,
+		&i.TokenInvalidBefore,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

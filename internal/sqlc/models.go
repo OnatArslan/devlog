@@ -11,7 +11,7 @@ import (
 type User struct {
 	ID                 int64
 	Email              string
-	Username           pgtype.Text
+	Username           string
 	PasswordHash       string
 	IsActive           bool
 	TokenInvalidBefore pgtype.Timestamptz

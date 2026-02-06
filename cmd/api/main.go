@@ -57,6 +57,11 @@ func main() {
 		httpx.WriteJSON(w, http.StatusOK, "OK")
 	})
 
+	r.Route("/api/v1", func(r chi.Router) {
+		// Here we will add user post
+
+	})
+
 	http.ListenAndServe(os.Getenv("PORT"), r)
 
 }

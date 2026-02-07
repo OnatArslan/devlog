@@ -6,6 +6,7 @@ RETURNING *;
 
 -- name: GetByEmail :one
 SELECT
+-- for testing purpose we are getting al info
   u.id,
   u.email,
   u.username,
@@ -15,4 +16,4 @@ SELECT
   u.created_at,
   u.updated_at
 FROM users u
-WHERE u.email = $1;
+WHERE u.email = $1 AND u.is_active = TRUE;

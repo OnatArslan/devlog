@@ -48,9 +48,10 @@ SELECT
   u.created_at,
   u.updated_at
 FROM users u
-WHERE u.email = $1
+WHERE u.email = $1 AND u.is_active = TRUE
 `
 
+// for testing purpose we are getting al info
 func (q *Queries) GetByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRow(ctx, getByEmail, email)
 	var i User

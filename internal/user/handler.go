@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/OnatArslan/devlog/internal/httpx"
 	"github.com/go-chi/chi/v5"
@@ -31,20 +32,33 @@ type SignUpRequest struct {
 	PasswordConfirm string `json:"passwordConfirm" validate:"required"`
 }
 
-func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+type SignUpResponse struct {
+	ID        int64     `json:"id"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
+	// decode request body
 	var req SignUpRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	defer r.Body.Close()
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	if err := dec.Decode(&req); err != nil {
 		httpx.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
-	defer r.Body.Close()
 
 	if err := h.validate.Struct(req); err != nil {
 		httpx.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	user, err := h.svc.SignUpUser(r.Context(), SignUpInput{Email: req.Email, Username: req.Username, Password: req.Password})
+	user, err := h.svc.SignUp(r.Context(), SignUpInput{Email: req.Email, Username: req.Username, Password: req.Password})
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrEmailTaken), errors.Is(err, ErrUsernameTaken), errors.Is(err, ErrConflict):
@@ -55,7 +69,7 @@ func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, ResponseUser{
+	httpx.WriteJSON(w, http.StatusCreated, SignUpResponse{
 		ID:        user.ID,
 		Email:     user.Email,
 		Username:  user.Username,
@@ -64,7 +78,34 @@ func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type SignInRequest struct {
+	Email string `json:"email"`
+}
+
+func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
+	var req SignInRequest
+
+	defer r.Body.Close()
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	user, err := h.svc.SignIn(r.Context(), req.Email)
+
+	if err != nil {
+		httpx.WriteError(w, http.StatusNotFound, err)
+		return
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, user)
+
+}
+
 func (h *UserHandler) Routes(r chi.Router) chi.Router {
-	r.Post("/signup", h.SignUpHandler)
+	r.Post("/signup", h.SignUp)
+	r.Post("/signin", h.SignIn)
 	return r
 }

@@ -3,10 +3,12 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/OnatArslan/devlog/internal/sqlc"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -25,7 +27,13 @@ func NewUserRepository(q *sqlc.Queries) *userRepository {
 	}
 }
 
-func (r *userRepository) CreateUser(ctx context.Context, input CreateUserInput) (User, error) {
+type CreateUserParams struct {
+	Email        string
+	Username     string
+	PasswordHash string
+}
+
+func (r *userRepository) CreateUser(ctx context.Context, input CreateUserParams) (User, error) {
 
 	row, err := r.q.CreateUser(ctx, sqlc.CreateUserParams{
 		Email:        input.Email,
@@ -60,6 +68,22 @@ func (r *userRepository) CreateUser(ctx context.Context, input CreateUserInput) 
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (User, error) {
+	row, err := r.q.GetByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrUserNotFound
+		}
+		return User{}, fmt.Errorf("repo get user by email : %w", err)
+	}
 
-	return User{}, nil
+	return User{
+		ID:                 row.ID,
+		Email:              row.Email,
+		Username:           row.Username,
+		PasswordHash:       row.PasswordHash,
+		IsActive:           row.IsActive,
+		TokenInvalidBefore: row.TokenInvalidBefore.Time,
+		CreatedAt:          row.CreatedAt.Time,
+		UpdatedAt:          row.UpdatedAt.Time,
+	}, nil
 }

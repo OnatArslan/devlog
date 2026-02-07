@@ -51,10 +51,6 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(20 * time.Second))
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		httpx.WriteJSON(w, http.StatusOK, map[string]string{"SERVER": "RUNNING..."})
-	})
-
 	// DOMAINS --------- ----------- -----------
 	// User domain
 	userRepo := user.NewUserRepository(queries)
@@ -64,8 +60,11 @@ func main() {
 
 	// We connect base router for api/v1
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+			httpx.WriteJSON(w, http.StatusOK, map[string]string{"SERVER": "RUNNING..."})
+		})
 		// user routes
-		r.Mount("/users", userHandler.Routes(r))
+		r.Mount("/users", userHandler.Routes(chi.NewRouter()))
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {

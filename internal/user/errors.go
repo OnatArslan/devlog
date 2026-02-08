@@ -10,4 +10,6 @@ var (
 	ErrUsernameTaken      = errors.New("username already taken")
 	ErrConflict           = errors.New("conflict")
 	ErrJWTSecretNotSet    = errors.New("jwt secret not set")
+	ErrInvalidToken       = errors.New("invalid token")
+	ErrUnknownClaimsType  = errors.New("unknown claims type")
 )

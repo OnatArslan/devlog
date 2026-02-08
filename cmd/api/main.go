@@ -66,7 +66,15 @@ func main() {
 	r.Route("/api/v1", func(r chi.Router) {
 		// Expose a simple health endpoint for liveness checks.
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			httpx.WriteJSON(w, http.StatusOK, map[string]string{"SERVER": "RUNNING..."})
+			u, ok := user.AuthUserFromContext(r.Context())
+			if !ok {
+				httpx.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized"))
+				return
+			}
+			httpx.WriteJSON(w, http.StatusOK, map[string]any{
+				"status": "ok",
+				"user":   u,
+			})
 		})
 		// user routes
 		// Mount user-related endpoints under /api/v1/users.

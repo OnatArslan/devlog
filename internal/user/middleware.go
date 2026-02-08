@@ -54,6 +54,7 @@ func (h *UserHandler) AuthMiddleware(next http.Handler) http.Handler {
 
 		// Parse and validate token signature and standard claims into custom claims.
 		claims := &CustomClaims{}
+
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (any, error) {
 			if t.Method != jwt.SigningMethodHS256 {
 				return nil, ErrInvalidToken

@@ -79,7 +79,21 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 type SignInRequest struct {
-	Email string `json:"email"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8,max=64"`
+}
+
+type SignInResponse struct {
+	User        SignInUserResult `json:"user"`
+	AccessToken string           `json:"access_token"`
+	TokenType   string           `json:"token_type"` // "Bearer"
+	ExpiresAt   time.Time        `json:"expires_at"`
+}
+
+type SignInUserResult struct {
+	ID       int64  `json:"id"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
 }
 
 func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -93,14 +107,38 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.svc.SignIn(r.Context(), req.Email)
-
-	if err != nil {
-		httpx.WriteError(w, http.StatusNotFound, err)
+	if err := h.validate.Struct(req); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, user)
+	signInOutput, err := h.svc.SignIn(r.Context(), req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrInvalidCredentials):
+			httpx.WriteError(w, http.StatusUnauthorized, err)
+		case errors.Is(err, ErrJWTSecretNotSet):
+			httpx.WriteError(w, http.StatusInternalServerError, err)
+		default:
+			httpx.WriteError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	userResponse := SignInUserResult{
+		ID:       signInOutput.User.ID,
+		Email:    signInOutput.User.Email,
+		Username: signInOutput.User.Username,
+	}
+
+	signInResponse := SignInResponse{
+		User:        userResponse,
+		AccessToken: signInOutput.Token,
+		TokenType:   "Bearer",
+		ExpiresAt:   signInOutput.ExpiresAt,
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, signInResponse)
 
 }
 

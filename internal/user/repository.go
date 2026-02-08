@@ -11,12 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var (
-	ErrEmailTaken    = errors.New("email already taken")
-	ErrUsernameTaken = errors.New("username already taken")
-	ErrConflict      = errors.New("conflict")
-)
-
 type userRepository struct {
 	q *sqlc.Queries
 }
@@ -40,6 +34,7 @@ func (r *userRepository) CreateUser(ctx context.Context, input CreateUserParams)
 		Username:     input.Username,
 		PasswordHash: input.PasswordHash,
 	})
+
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {

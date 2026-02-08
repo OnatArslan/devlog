@@ -2,7 +2,7 @@ package user
 
 import "time"
 
-// User is the domain entity used by the user package.
+// User is the core domain model used across handler, service, and repository layers.
 // It intentionally avoids database-specific types.
 type User struct {
 	ID                 int64

@@ -11,13 +11,15 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// UserHandler maps HTTP requests to user service operations.
 type UserHandler struct {
 	svc      *userService
 	validate *validator.Validate
 }
 
+// NewUserHandler constructs a handler with service and validator dependencies.
 func NewUserHandler(svc *userService, validate *validator.Validate) *UserHandler {
-
+	// Return an HTTP handler that delegates business logic to the service.
 	return &UserHandler{
 		svc:      svc,
 		validate: validate,
@@ -25,6 +27,7 @@ func NewUserHandler(svc *userService, validate *validator.Validate) *UserHandler
 }
 
 // REGISTER ---------------------
+// SignUpRequest is the expected JSON payload for user registration.
 type SignUpRequest struct {
 	Email           string `json:"email" validate:"required,email"`
 	Username        string `json:"username" validate:"required,alphanum"`
@@ -32,6 +35,7 @@ type SignUpRequest struct {
 	PasswordConfirm string `json:"passwordConfirm" validate:"required"`
 }
 
+// SignUpResponse is the public response body returned after successful registration.
 type SignUpResponse struct {
 	ID        int64     `json:"id"`
 	Email     string    `json:"email"`
@@ -40,8 +44,9 @@ type SignUpResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// SignUp handles user registration requests and writes a safe public user payload.
 func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
-	// decode request body
+	// Decode and validate the incoming JSON request body.
 	var req SignUpRequest
 	defer r.Body.Close()
 
@@ -58,8 +63,10 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Call the service layer to create a new user account.
 	user, err := h.svc.SignUp(r.Context(), SignUpInput{Email: req.Email, Username: req.Username, Password: req.Password})
 	if err != nil {
+		// Map domain conflicts and unexpected failures to HTTP status codes.
 		switch {
 		case errors.Is(err, ErrEmailTaken), errors.Is(err, ErrUsernameTaken), errors.Is(err, ErrConflict):
 			httpx.WriteError(w, http.StatusConflict, err)
@@ -69,6 +76,7 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Return only safe public user fields in the response body.
 	httpx.WriteJSON(w, http.StatusCreated, SignUpResponse{
 		ID:        user.ID,
 		Email:     user.Email,
@@ -78,11 +86,13 @@ func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// SignInRequest is the expected JSON payload for password-based authentication.
 type SignInRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8,max=64"`
 }
 
+// SignInResponse returns user-safe identity fields with access token details.
 type SignInResponse struct {
 	User        SignInUserResult `json:"user"`
 	AccessToken string           `json:"access_token"`
@@ -90,13 +100,16 @@ type SignInResponse struct {
 	ExpiresAt   time.Time        `json:"expires_at"`
 }
 
+// SignInUserResult contains only non-sensitive user fields for login responses.
 type SignInUserResult struct {
 	ID       int64  `json:"id"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
 }
 
+// SignIn validates request input, authenticates credentials, and returns token payload.
 func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
+	// Decode and validate signin credentials from request body.
 	var req SignInRequest
 
 	defer r.Body.Close()
@@ -112,8 +125,10 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Delegate authentication and token creation to the service.
 	signInOutput, err := h.svc.SignIn(r.Context(), req)
 	if err != nil {
+		// Map authentication and server-side errors to proper HTTP statuses.
 		switch {
 		case errors.Is(err, ErrInvalidCredentials):
 			httpx.WriteError(w, http.StatusUnauthorized, err)
@@ -125,12 +140,14 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Build a safe user payload without sensitive fields.
 	userResponse := SignInUserResult{
 		ID:       signInOutput.User.ID,
 		Email:    signInOutput.User.Email,
 		Username: signInOutput.User.Username,
 	}
 
+	// Build the final signin response containing token metadata.
 	signInResponse := SignInResponse{
 		User:        userResponse,
 		AccessToken: signInOutput.Token,
@@ -142,7 +159,9 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Routes registers user HTTP routes under the provided chi router.
 func (h *UserHandler) Routes(r chi.Router) chi.Router {
+	// Register user auth endpoints on the provided router.
 	r.Post("/signup", h.SignUp)
 	r.Post("/signin", h.SignIn)
 	return r

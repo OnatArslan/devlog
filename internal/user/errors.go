@@ -2,6 +2,7 @@ package user
 
 import "errors"
 
+// Domain-level user/auth errors shared across repository, service, and handler layers.
 var (
 	ErrUserNotFound       = errors.New("user not found")
 	ErrInvalidCredentials = errors.New("invalid credentials")

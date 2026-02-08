@@ -13,11 +13,14 @@ import (
 )
 
 // CREATING SERVICE STRUCT --- --- --- --- --- ---
+// userService contains business rules for user registration and authentication flows.
 type userService struct {
 	rep *userRepository
 }
 
+// NewUserService wires the service with its repository dependency.
 func NewUserService(rep *userRepository) *userService {
+	// Return a service instance bound to the repository implementation.
 	return &userService{
 		rep: rep,
 	}
@@ -26,19 +29,24 @@ func NewUserService(rep *userRepository) *userService {
 // CREATING METHODS --- --- --- --- --- ---
 
 // SignUp Stuff --- --- ---
+// SignUpInput carries raw registration fields received from the handler layer.
 type SignUpInput struct {
 	Email    string
 	Username string
 	Password string
 }
 
+// SignUp hashes the password and creates a new user record.
 func (s *userService) SignUp(ctx context.Context, input SignUpInput) (User, error) {
+	// Convert the plain password to bytes for bcrypt processing.
 	passwordByte := []byte(input.Password)
 
+	// Hash the password before persisting any user record.
 	hashedByte, err := bcrypt.GenerateFromPassword(passwordByte, 12)
 	if err != nil {
 		return User{}, err
 	}
+	// Persist the new user with the generated password hash.
 	user, err := s.rep.CreateUser(ctx, CreateUserParams{Email: input.Email,
 		PasswordHash: string(hashedByte),
 		Username:     input.Username})
@@ -49,12 +57,14 @@ func (s *userService) SignUp(ctx context.Context, input SignUpInput) (User, erro
 	return user, nil
 }
 
+// SignInOutput contains the authenticated user and generated access token metadata.
 type SignInOutput struct {
 	User      User
 	Token     string
 	ExpiresAt time.Time
 }
 
+// CustomClaims extends JWT registered claims with application-specific user identity fields.
 type CustomClaims struct {
 	UserID   int64  `json:"uid"`
 	Email    string `json:"email"`
@@ -62,7 +72,9 @@ type CustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+// SignIn validates credentials and returns a signed short-lived JWT access token.
 func (s *userService) SignIn(ctx context.Context, input SignInRequest) (SignInOutput, error) {
+	// Fetch the active user by email for credential verification.
 	user, err := s.rep.GetByEmail(ctx, input.Email)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
@@ -71,13 +83,16 @@ func (s *userService) SignIn(ctx context.Context, input SignInRequest) (SignInOu
 		return SignInOutput{}, fmt.Errorf("service signin get user: %w", err)
 	}
 
+	// Compare the stored password hash with the provided raw password.
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		return SignInOutput{}, ErrInvalidCredentials
 	}
 
+	// Define token issuance and expiration timestamps.
 	now := time.Now()
 	exp := now.Add(15 * time.Minute)
 
+	// Build application and standard JWT claims for this session.
 	claims := CustomClaims{
 		UserID:   user.ID,
 		Email:    user.Email,
@@ -90,11 +105,13 @@ func (s *userService) SignIn(ctx context.Context, input SignInRequest) (SignInOu
 		},
 	}
 
+	// Read signing secret from environment and fail fast when missing.
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		return SignInOutput{}, ErrJWTSecretNotSet
 	}
 
+	// Create and sign the JWT token with HS256.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(secret))
 
@@ -102,6 +119,7 @@ func (s *userService) SignIn(ctx context.Context, input SignInRequest) (SignInOu
 		return SignInOutput{}, fmt.Errorf("service signin sign token: %w", err)
 	}
 
+	// Return authenticated user metadata together with token payload.
 	return SignInOutput{
 		User:      user,
 		Token:     signed,

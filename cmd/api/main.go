@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/OnatArslan/devlog/internal/httpx"
+	"github.com/OnatArslan/devlog/internal/post"
 	"github.com/OnatArslan/devlog/internal/sqlc"
 	"github.com/OnatArslan/devlog/internal/user"
 	"github.com/OnatArslan/devlog/internal/validatorx"
@@ -59,6 +60,11 @@ func main() {
 	userSvc := user.NewUserService(userRepo)
 	userHandler := user.NewUserHandler(userSvc, validate)
 
+	// Post domain
+	postRepo := post.NewPostRepository(queries)
+	postService := post.NewPostService(postRepo)
+	postHandler := post.NewPostHandler(postService, validate)
+
 	// We connect base router for api/v1
 	r.Route("/api/v1", func(r chi.Router) {
 		// Expose a simple health endpoint for liveness checks.
@@ -71,6 +77,7 @@ func main() {
 
 		// Mount user-related endpoints under /api/v1/users.
 		r.Mount("/users", userHandler.Routes(chi.NewRouter()))
+		r.Mount("/posts", postHandler.Routes(chi.NewRouter()))
 	})
 
 	// Return consistent JSON error for undefined routes.

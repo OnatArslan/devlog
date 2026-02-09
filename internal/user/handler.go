@@ -125,8 +125,13 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	signInInput := SignInInput{
+		Email:    req.Email,
+		Password: req.Password,
+	}
+
 	// Delegate authentication and token creation to the service.
-	signInOutput, err := h.svc.SignIn(r.Context(), req)
+	signInOutput, err := h.svc.SignIn(r.Context(), signInInput)
 	if err != nil {
 		// Map authentication and server-side errors to proper HTTP statuses.
 		switch {
@@ -170,7 +175,7 @@ type GetMeResponse struct {
 
 func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 
-	ctxUser, ok := r.Context().Value("auth_user").(AuthUser)
+	ctxUser, ok := AuthUserFromContext(r.Context())
 
 	if !ok {
 		httpx.WriteError(w, http.StatusNotFound, ErrUserNotFound)
@@ -179,7 +184,12 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.svc.GetMe(r.Context(), ctxUser.Email)
 	if err != nil {
-		httpx.WriteError(w, http.StatusNotFound, err)
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			httpx.WriteError(w, http.StatusNotFound, err)
+		default:
+			httpx.WriteError(w, http.StatusInternalServerError, err)
+		}
 		return
 	}
 

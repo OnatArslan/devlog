@@ -71,8 +71,13 @@ type CustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+type SignInInput struct {
+	Email    string
+	Password string
+}
+
 // SignIn validates credentials and returns a signed short-lived JWT access token.
-func (s *userService) SignIn(ctx context.Context, input SignInRequest) (SignInOutput, error) {
+func (s *userService) SignIn(ctx context.Context, input SignInInput) (SignInOutput, error) {
 	// Fetch the active user by email for credential verification.
 	user, err := s.rep.GetByEmail(ctx, input.Email)
 	if err != nil {

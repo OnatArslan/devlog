@@ -156,7 +156,44 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.WriteJSON(w, http.StatusOK, signInResponse)
+}
 
+type GetMeResponse struct {
+	ID                 int64     `json:"id"`
+	Email              string    `json:"email"`
+	Username           string    `json:"username"`
+	IsActive           bool      `json:"is_active"`
+	TokenInvalidBefore time.Time `json:"token_invalid_before"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
+}
+
+func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+
+	ctxUser, ok := r.Context().Value("auth_user").(AuthUser)
+
+	if !ok {
+		httpx.WriteError(w, http.StatusNotFound, ErrUserNotFound)
+		return
+	}
+
+	user, err := h.svc.GetMe(r.Context(), ctxUser.Email)
+	if err != nil {
+		httpx.WriteError(w, http.StatusNotFound, err)
+		return
+	}
+
+	response := GetMeResponse{
+		ID:                 user.ID,
+		Email:              user.Email,
+		Username:           user.Username,
+		IsActive:           user.IsActive,
+		TokenInvalidBefore: user.TokenInvalidBefore,
+		CreatedAt:          user.CreatedAt,
+		UpdatedAt:          user.UpdatedAt,
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, response)
 }
 
 // Routes registers user HTTP routes under the provided chi router.
@@ -164,5 +201,9 @@ func (h *UserHandler) Routes(r chi.Router) chi.Router {
 	// Register user auth endpoints on the provided router.
 	r.Post("/signup", h.SignUp)
 	r.Post("/signin", h.SignIn)
+	r.Group(func(r chi.Router) {
+		r.Use(h.AuthMiddleware)
+		r.Get("/me", h.GetMe)
+	})
 	return r
 }

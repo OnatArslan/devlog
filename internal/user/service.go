@@ -124,3 +124,13 @@ func (s *userService) SignIn(ctx context.Context, input SignInRequest) (SignInOu
 		ExpiresAt: exp,
 	}, nil
 }
+
+func (s *userService) GetMe(ctx context.Context, email string) (User, error) {
+
+	user, err := s.rep.GetByEmail(ctx, email)
+	if err != nil {
+		return User{}, ErrUserNotFound
+	}
+
+	return user, nil
+}

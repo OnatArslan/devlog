@@ -11,9 +11,6 @@ import (
 )
 
 // ctxKey is a private type used to prevent context key collisions.
-type ctxKey string
-
-const authUserKey ctxKey = "auth_user"
 
 // AuthUser contains minimal authenticated identity passed through request context.
 type AuthUser struct {
@@ -23,7 +20,7 @@ type AuthUser struct {
 
 // AuthUserFromContext returns authenticated user data if middleware populated it.
 func AuthUserFromContext(ctx context.Context) (AuthUser, bool) {
-	user, ok := ctx.Value(authUserKey).(AuthUser)
+	user, ok := ctx.Value("auth_user").(AuthUser)
 	return user, ok
 }
 
@@ -72,7 +69,7 @@ func (h *UserHandler) AuthMiddleware(next http.Handler) http.Handler {
 			Email: claims.Email,
 		}
 
-		ctx := context.WithValue(r.Context(), authUserKey, authUser)
+		ctx := context.WithValue(r.Context(), "auth_user", authUser)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

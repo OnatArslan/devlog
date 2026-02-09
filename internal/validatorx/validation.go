@@ -15,6 +15,7 @@ func New() *validator.Validate {
 	return v
 }
 
+// Custom validators based on tags
 func strongPassword(fl validator.FieldLevel) bool {
 	s := fl.Field().String()
 

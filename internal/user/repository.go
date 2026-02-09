@@ -78,7 +78,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (User, er
 		if errors.Is(err, pgx.ErrNoRows) {
 			return User{}, ErrUserNotFound
 		}
-		return User{}, fmt.Errorf("service get me: %w", err)
+		return User{}, fmt.Errorf("repository get by email: %w", err)
 	}
 
 	// Map query result into the package domain model.

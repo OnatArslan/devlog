@@ -116,7 +116,7 @@ func (s *userService) SignIn(ctx context.Context, input SignInInput) (SignInOutp
 
 	// Create and sign the JWT token with HS256.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString([]byte(secret))
+	signedTokenString, err := token.SignedString([]byte(secret))
 
 	if err != nil {
 		return SignInOutput{}, fmt.Errorf("service signin sign token: %w", err)
@@ -125,7 +125,7 @@ func (s *userService) SignIn(ctx context.Context, input SignInInput) (SignInOutp
 	// Return authenticated user metadata together with token payload.
 	return SignInOutput{
 		User:      user,
-		Token:     signed,
+		Token:     signedTokenString,
 		ExpiresAt: exp,
 	}, nil
 }

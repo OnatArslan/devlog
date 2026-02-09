@@ -17,9 +17,8 @@ const authUserKey ctxKey = "auth_user"
 
 // AuthUser contains minimal authenticated identity passed through request context.
 type AuthUser struct {
-	ID       int64
-	Email    string
-	Username string
+	ID    int64
+	Email string
 }
 
 // AuthUserFromContext returns authenticated user data if middleware populated it.
@@ -53,9 +52,9 @@ func (h *UserHandler) AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Parse and validate token signature and standard claims into custom claims.
-		claims := &CustomClaims{}
+		claims := CustomClaims{}
 
-		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (any, error) {
+		token, err := jwt.ParseWithClaims(tokenStr, &claims, func(t *jwt.Token) (any, error) {
 			if t.Method != jwt.SigningMethodHS256 {
 				return nil, ErrInvalidToken
 			}
@@ -69,9 +68,8 @@ func (h *UserHandler) AuthMiddleware(next http.Handler) http.Handler {
 
 		// Build context-safe auth payload for downstream protected handlers.
 		authUser := AuthUser{
-			ID:       claims.UserID,
-			Email:    claims.Email,
-			Username: claims.Username,
+			ID:    claims.UserID,
+			Email: claims.Email,
 		}
 
 		ctx := context.WithValue(r.Context(), authUserKey, authUser)

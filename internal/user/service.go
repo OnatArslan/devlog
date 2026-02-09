@@ -52,7 +52,7 @@ func (s *userService) SignUp(ctx context.Context, input SignUpInput) (User, erro
 		Username:     input.Username})
 
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("signup service : %w", err)
 	}
 	return user, nil
 }
@@ -66,9 +66,8 @@ type SignInOutput struct {
 
 // CustomClaims extends JWT registered claims with application-specific user identity fields.
 type CustomClaims struct {
-	UserID   int64  `json:"uid"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
+	UserID int64  `json:"uid"`
+	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -94,9 +93,8 @@ func (s *userService) SignIn(ctx context.Context, input SignInRequest) (SignInOu
 
 	// Build application and standard JWT claims for this session.
 	claims := CustomClaims{
-		UserID:   user.ID,
-		Email:    user.Email,
-		Username: user.Username,
+		UserID: user.ID,
+		Email:  user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "devlog-auth-service",
 			Subject:   strconv.FormatInt(user.ID, 10),

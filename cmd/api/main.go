@@ -12,14 +12,12 @@ import (
 	"github.com/OnatArslan/devlog/internal/httpx"
 	"github.com/OnatArslan/devlog/internal/sqlc"
 	"github.com/OnatArslan/devlog/internal/user"
+	"github.com/OnatArslan/devlog/internal/validatorx"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
-
-var validate *validator.Validate
 
 func main() {
 	// Create a root context used during app bootstrapping.
@@ -42,7 +40,7 @@ func main() {
 	queries := sqlc.New(pool)
 
 	// Create validator object
-	validate = validator.New(validator.WithRequiredStructEnabled())
+	validate := validatorx.New()
 
 	// Create chi router
 	r := chi.NewRouter()
@@ -59,7 +57,6 @@ func main() {
 	// Wire repository, service, validations, and HTTP handlers for user module.
 	userRepo := user.NewUserRepository(queries)
 	userSvc := user.NewUserService(userRepo)
-	user.RegisterValidations(validate)
 	userHandler := user.NewUserHandler(userSvc, validate)
 
 	// We connect base router for api/v1

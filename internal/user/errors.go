@@ -12,4 +12,5 @@ var (
 	ErrJWTSecretNotSet    = errors.New("jwt secret not set")
 	ErrInvalidToken       = errors.New("invalid token")
 	ErrUnknownClaimsType  = errors.New("unknown claims type")
+	ErrWeakPassword       = errors.New("password is weak")
 )

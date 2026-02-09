@@ -31,8 +31,8 @@ func NewUserHandler(svc *userService, validate *validator.Validate) *UserHandler
 type SignUpRequest struct {
 	Email           string `json:"email" validate:"required,email"`
 	Username        string `json:"username" validate:"required,alphanum"`
-	Password        string `json:"password" validate:"required,min=8,max=64"`
-	PasswordConfirm string `json:"passwordConfirm" validate:"required"`
+	Password        string `json:"password" validate:"required,min=8,max=64,strong-password"`
+	PasswordConfirm string `json:"passwordConfirm" validate:"required,eqfield=Password"`
 }
 
 // SignUpResponse is the public response body returned after successful registration.

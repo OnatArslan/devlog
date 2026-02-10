@@ -31,7 +31,7 @@ func NewUserHandler(svc *userService, validate *validator.Validate) *UserHandler
 type SignUpRequest struct {
 	Email           string `json:"email" validate:"required,email"`
 	Username        string `json:"username" validate:"required,alphanum"`
-	Password        string `json:"password" validate:"required,min=8,max=64,strong-password"`
+	Password        string `json:"password" validate:"required,strong-password"`
 	PasswordConfirm string `json:"passwordConfirm" validate:"required,eqfield=Password"`
 }
 

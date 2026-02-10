@@ -20,7 +20,7 @@ func strongPassword(fl validator.FieldLevel) bool {
 	s := fl.Field().String()
 
 	// policy: min 8, en az 1 buyuk, 1 kucuk, 1 rakam, 1 ozel karakter, bosluk yok
-	if len(s) < 8 || strings.ContainsAny(s, " \t\n\r") {
+	if len(s) < 8 || len(s) > 64 || strings.ContainsAny(s, " \t\n\r") {
 		return false
 	}
 

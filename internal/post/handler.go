@@ -11,13 +11,15 @@ import (
 type PostHandler struct {
 	svc      *PostService
 	validate *validator.Validate
+	authMW   func(http.Handler) http.Handler
 }
 
-func NewPostHandler(svc *PostService, validate *validator.Validate) *PostHandler {
+func NewPostHandler(svc *PostService, validate *validator.Validate, authMW func(http.Handler) http.Handler) *PostHandler {
 
 	return &PostHandler{
 		svc:      svc,
 		validate: validate,
+		authMW:   authMW,
 	}
 }
 
@@ -26,8 +28,17 @@ func (h *PostHandler) Example(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
+func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
+
+	httpx.WriteJSON(w, http.StatusCreated, map[string]string{"status": "ok"})
+}
+
 func (h *PostHandler) Routes(r chi.Router) chi.Router {
 	r.Get("/", h.Example)
+	r.Group(func(r chi.Router) {
+		r.Use(h.authMW)
+		r.Post("/", h.CreatePost)
+	})
 
 	return r
 }

@@ -63,7 +63,7 @@ func main() {
 	// Post domain
 	postRepo := post.NewPostRepository(queries)
 	postService := post.NewPostService(postRepo)
-	postHandler := post.NewPostHandler(postService, validate)
+	postHandler := post.NewPostHandler(postService, validate, userHandler.AuthMiddleware)
 
 	// We connect base router for api/v1
 	r.Route("/api/v1", func(r chi.Router) {

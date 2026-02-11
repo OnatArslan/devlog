@@ -3,6 +3,7 @@ package post
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/OnatArslan/devlog/internal/sqlc"
 )
@@ -42,4 +43,37 @@ func (r *PostRepository) CreatePost(ctx context.Context, params CreatePostParams
 		CreatedAt: row.CreatedAt.Time,
 		UpdatedAt: row.UpdatedAt.Time,
 	}, nil
+}
+
+type GetAllPostsRow struct {
+	ID        int64
+	AuthorID  int64
+	Username  string
+	Title     string
+	Content   string
+	UpdatedAt time.Time
+	CreatedAt time.Time
+}
+
+func (r *PostRepository) GetAllPosts(ctx context.Context) ([]GetAllPostsRow, error) {
+
+	rows, err := r.q.GetAllPosts(ctx)
+	if err != nil {
+		return []GetAllPostsRow{}, err
+	}
+
+	posts := make([]GetAllPostsRow, 0, len(rows))
+
+	for _, row := range rows {
+		posts = append(posts, GetAllPostsRow{
+			ID:        row.ID,
+			AuthorID:  row.AuthorID,
+			Username:  row.Username,
+			Title:     row.Title,
+			Content:   row.Content,
+			UpdatedAt: row.UpdatedAt.Time,
+			CreatedAt: row.CreatedAt.Time,
+		})
+	}
+	return posts, nil
 }

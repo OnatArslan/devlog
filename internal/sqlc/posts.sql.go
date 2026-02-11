@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createPost = `-- name: CreatePost :one
@@ -33,4 +35,46 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getAllPosts = `-- name: GetAllPosts :many
+SELECT p.id, p.author_id, p.title, p.content, p.updated_at, p.created_at, u.username FROM posts p JOIN users u ON u.id = p.author_id
+`
+
+type GetAllPostsRow struct {
+	ID        int64
+	AuthorID  int64
+	Title     string
+	Content   string
+	UpdatedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+	Username  string
+}
+
+func (q *Queries) GetAllPosts(ctx context.Context) ([]GetAllPostsRow, error) {
+	rows, err := q.db.Query(ctx, getAllPosts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllPostsRow
+	for rows.Next() {
+		var i GetAllPostsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AuthorID,
+			&i.Title,
+			&i.Content,
+			&i.UpdatedAt,
+			&i.CreatedAt,
+			&i.Username,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

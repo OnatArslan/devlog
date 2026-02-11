@@ -91,8 +91,20 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
+
+	posts, err := h.svc.GetAllPosts(r.Context())
+	if err != nil {
+		httpx.WriteError(w, http.StatusNotFound, err)
+		return
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, posts)
+}
+
 func (h *PostHandler) Routes(r chi.Router) chi.Router {
-	r.Get("/", h.Example)
+	r.Get("/", h.GetAllPosts)
+
 	r.Group(func(r chi.Router) {
 		r.Use(h.authMW)
 		r.Post("/", h.CreatePost)

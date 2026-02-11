@@ -33,3 +33,14 @@ func (s *PostService) CreatePost(ctx context.Context, input CreatePostInput) (Po
 	}
 	return post, nil
 }
+
+func (s *PostService) GetAllPosts(ctx context.Context) ([]GetAllPostsRow, error) {
+
+	posts, err := s.repo.GetAllPosts(ctx)
+	if err != nil {
+		return []GetAllPostsRow{}, err
+	}
+
+	return posts, nil
+
+}

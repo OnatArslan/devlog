@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS posts(
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE posts IF EXISTS;
+DROP TABLE IF EXISTS posts;
 -- +goose StatementEnd

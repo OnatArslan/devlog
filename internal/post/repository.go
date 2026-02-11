@@ -45,27 +45,24 @@ func (r *PostRepository) CreatePost(ctx context.Context, params CreatePostParams
 	}, nil
 }
 
-type GetAllPostsRow struct {
-	ID        int64
-	AuthorID  int64
-	Username  string
-	Title     string
-	Content   string
-	UpdatedAt time.Time
-	CreatedAt time.Time
+type PostRow struct {
+	ID        int64     `json:"id"`
+	AuthorID  int64     `json:"author_id"`
+	Username  string    `json:"author_username"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-func (r *PostRepository) GetAllPosts(ctx context.Context) ([]GetAllPostsRow, error) {
-
+func (r *PostRepository) GetAllPosts(ctx context.Context) ([]PostRow, error) {
 	rows, err := r.q.GetAllPosts(ctx)
 	if err != nil {
-		return []GetAllPostsRow{}, err
+		return []PostRow{}, err
 	}
-
-	posts := make([]GetAllPostsRow, 0, len(rows))
-
+	posts := make([]PostRow, 0, len(rows))
 	for _, row := range rows {
-		posts = append(posts, GetAllPostsRow{
+		posts = append(posts, PostRow{
 			ID:        row.ID,
 			AuthorID:  row.AuthorID,
 			Username:  row.Username,
@@ -76,4 +73,22 @@ func (r *PostRepository) GetAllPosts(ctx context.Context) ([]GetAllPostsRow, err
 		})
 	}
 	return posts, nil
+}
+
+func (r *PostRepository) GetPostById(ctx context.Context, id int64) (PostRow, error) {
+
+	row, err := r.q.GetPostById(ctx, id)
+	if err != nil {
+		return PostRow{}, err
+	}
+
+	return PostRow{
+		ID:        row.ID,
+		AuthorID:  row.AuthorID,
+		Username:  row.Username,
+		Title:     row.Title,
+		Content:   row.Content,
+		UpdatedAt: row.UpdatedAt.Time,
+		CreatedAt: row.CreatedAt.Time,
+	}, nil
 }

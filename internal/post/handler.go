@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/OnatArslan/devlog/internal/httpx"
@@ -102,9 +103,33 @@ func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, posts)
 }
 
+type GetPostByIdRequest struct {
+	ID int64 `json:"id"`
+}
+
+func (h *PostHandler) GetPostById(w http.ResponseWriter, r *http.Request) {
+
+	id_str := chi.URLParam(r, "id")
+
+	id, err := strconv.ParseInt(id_str, 10, 64)
+	if err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	post, err := h.svc.GetPostById(r.Context(), id)
+
+	if err != nil {
+		httpx.WriteError(w, http.StatusNotFound, err)
+		return
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, post)
+}
+
 func (h *PostHandler) Routes(r chi.Router) chi.Router {
 	r.Get("/", h.GetAllPosts)
-
+	r.Get("/{id}", h.GetPostById)
 	r.Group(func(r chi.Router) {
 		r.Use(h.authMW)
 		r.Post("/", h.CreatePost)

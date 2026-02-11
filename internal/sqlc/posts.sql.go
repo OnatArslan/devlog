@@ -78,3 +78,33 @@ func (q *Queries) GetAllPosts(ctx context.Context) ([]GetAllPostsRow, error) {
 	}
 	return items, nil
 }
+
+const getPostById = `-- name: GetPostById :one
+SELECT p.id, p.author_id, p.title, p.content, p.updated_at, p.created_at, u.username FROM posts p JOIN users u ON u.id = p.author_id
+WHERE p.id = $1
+`
+
+type GetPostByIdRow struct {
+	ID        int64
+	AuthorID  int64
+	Title     string
+	Content   string
+	UpdatedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+	Username  string
+}
+
+func (q *Queries) GetPostById(ctx context.Context, id int64) (GetPostByIdRow, error) {
+	row := q.db.QueryRow(ctx, getPostById, id)
+	var i GetPostByIdRow
+	err := row.Scan(
+		&i.ID,
+		&i.AuthorID,
+		&i.Title,
+		&i.Content,
+		&i.UpdatedAt,
+		&i.CreatedAt,
+		&i.Username,
+	)
+	return i, err
+}

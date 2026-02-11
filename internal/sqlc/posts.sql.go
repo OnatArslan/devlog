@@ -108,33 +108,3 @@ func (q *Queries) GetPostById(ctx context.Context, id int64) (GetPostByIdRow, er
 	)
 	return i, err
 }
-
-const updatePost = `-- name: UpdatePost :one
-UPDATE posts
-SET
-  title = COALESCE($2, title),
-  content = COALESCE($3, content),
-  updated_at = now()
-WHERE id = $1
-RETURNING id, author_id, title, content, updated_at, created_at
-`
-
-type UpdatePostParams struct {
-	ID      int64
-	Title   pgtype.Text
-	Content pgtype.Text
-}
-
-func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error) {
-	row := q.db.QueryRow(ctx, updatePost, arg.ID, arg.Title, arg.Content)
-	var i Post
-	err := row.Scan(
-		&i.ID,
-		&i.AuthorID,
-		&i.Title,
-		&i.Content,
-		&i.UpdatedAt,
-		&i.CreatedAt,
-	)
-	return i, err
-}

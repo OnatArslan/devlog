@@ -42,11 +42,9 @@ func (s *PostService) GetAllPosts(ctx context.Context) ([]PostRow, error) {
 	}
 
 	return posts, nil
-
 }
 
 func (s *PostService) GetPostById(ctx context.Context, id int64) (PostRow, error) {
-
 	post, err := s.repo.GetPostById(ctx, id)
 	if err != nil {
 		return PostRow{}, err

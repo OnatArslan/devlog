@@ -106,7 +106,7 @@ func (s *userService) SignIn(ctx context.Context, input SignInInput) (SignInOutp
 
 	// Read signing secret from environment and fail fast when missing.
 	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
+	if secret == "" || len([]rune(secret)) < 32 {
 		return SignInOutput{}, ErrJWTSecretNotSet
 	}
 

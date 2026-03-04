@@ -26,10 +26,6 @@ func NewUserService(rep *userRepository) *userService {
 	}
 }
 
-// CREATING METHODS --- --- --- --- --- ---
-
-// SignUp Stuff --- --- ---
-// SignUpInput carries raw registration fields received from the handler layer.
 type SignUpInput struct {
 	Email    string
 	Username string

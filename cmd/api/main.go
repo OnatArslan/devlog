@@ -78,6 +78,7 @@ func main() {
 		// Mount user-related endpoints under /api/v1/users.
 		r.Mount("/users", userHandler.Routes(chi.NewRouter()))
 		r.Mount("/posts", postHandler.Routes(chi.NewRouter()))
+
 	})
 
 	// Return consistent JSON error for undefined routes.

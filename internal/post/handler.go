@@ -92,6 +92,11 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type GetAllPostsResponse struct {
+	Count int64     `json:"count"`
+	Posts []PostRow `json:"posts"`
+}
+
 func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := h.svc.GetAllPosts(r.Context())
@@ -100,7 +105,7 @@ func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, posts)
+	httpx.WriteJSON(w, http.StatusOK, GetAllPostsResponse{Posts: posts, Count: int64(len(posts))})
 }
 
 type GetPostByIdRequest struct {

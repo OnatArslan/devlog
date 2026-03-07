@@ -6,7 +6,7 @@ RETURNING *;
 
 -- name: GetByEmail :one
 SELECT
--- for testing purpose we are getting al info
+-- for testing purpose we are getting all info
   u.id,
   u.email,
   u.username,

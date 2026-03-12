@@ -3,7 +3,6 @@ package post
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -51,7 +50,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	// Get auth user
 	user, ok := user.AuthUserFromContext(r.Context())
 	if !ok {
-		httpx.WriteError(w, http.StatusNonAuthoritativeInfo, errors.New("auth user can not found"))
+		httpx.WriteError(w, http.StatusUnauthorized, errors.New("auth user can not found"))
 		return
 	}
 	// Get req data
@@ -60,7 +59,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
-		fmt.Println("xd")
 		httpx.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
@@ -78,7 +76,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		httpx.WriteError(w, http.StatusConflict, err)
+		httpx.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -101,7 +99,7 @@ func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := h.svc.GetAllPosts(r.Context())
 	if err != nil {
-		httpx.WriteError(w, http.StatusNotFound, err)
+		httpx.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 

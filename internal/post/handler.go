@@ -81,14 +81,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusCreated, CreatePostResponse{
-		ID:        post.ID,
-		AuthorID:  post.AuthorID,
-		Title:     post.Title,
-		Content:   post.Content,
-		CreatedAt: post.CreatedAt,
-		UpdatedAt: post.UpdatedAt,
-	})
+	httpx.WriteJSON(w, http.StatusCreated, CreatePostResponse(post))
 }
 
 // GetAllPostsResponse is the JSON response body for listing all posts.

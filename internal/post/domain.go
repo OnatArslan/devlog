@@ -1,3 +1,4 @@
+// Package post placeholder
 package post
 
 import "time"

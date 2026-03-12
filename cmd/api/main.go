@@ -60,7 +60,6 @@ func main() {
 	userSvc := user.NewUserService(userRepo)
 	userHandler := user.NewUserHandler(userSvc, validate)
 
-	// Post domain
 	postRepo := post.NewPostRepository(queries)
 	postService := post.NewPostService(postRepo)
 	postHandler := post.NewPostHandler(postService, validate, userHandler.AuthMiddleware)

@@ -34,12 +34,38 @@ func (s *Service) CreatePost(ctx context.Context, input CreatePostInput) (Post, 
 	return post, nil
 }
 
-// GetAllPosts returns all posts with their author usernames.
-func (s *Service) GetAllPosts(ctx context.Context) ([]Row, error) {
+const (
+	defaultPageLimit = 20
+	maxPageLimit     = 100
+)
 
-	posts, err := s.repo.GetAllPosts(ctx)
+// ListPostsInput defines pagination parameters for listing posts.
+type ListPostsInput struct {
+	Limit  int32
+	Offset int32
+}
+
+// NormalizeListInput clamps limit to valid bounds and ensures offset is non-negative.
+func NormalizeListInput(input ListPostsInput) ListPostsInput {
+	if input.Limit <= 0 {
+		input.Limit = defaultPageLimit
+	}
+	if input.Limit > maxPageLimit {
+		input.Limit = maxPageLimit
+	}
+	if input.Offset < 0 {
+		input.Offset = 0
+	}
+	return input
+}
+
+// GetAllPosts returns paginated posts with their author usernames.
+func (s *Service) GetAllPosts(ctx context.Context, input ListPostsInput) ([]Row, error) {
+	input = NormalizeListInput(input)
+
+	posts, err := s.repo.GetAllPosts(ctx, input.Limit, input.Offset)
 	if err != nil {
-		return []Row{}, err
+		return nil, fmt.Errorf("get all posts service: %w", err)
 	}
 
 	return posts, nil

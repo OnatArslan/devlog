@@ -60,11 +60,14 @@ type Row struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// GetAllPosts returns all posts joined with their author username.
-func (r *Repository) GetAllPosts(ctx context.Context) ([]Row, error) {
-	rows, err := r.q.GetAllPosts(ctx)
+// GetAllPosts returns paginated posts joined with their author username.
+func (r *Repository) GetAllPosts(ctx context.Context, limit, offset int32) ([]Row, error) {
+	rows, err := r.q.GetAllPosts(ctx, sqlc.GetAllPostsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
 	if err != nil {
-		return []Row{}, err
+		return nil, fmt.Errorf("repository get all posts: %w", err)
 	}
 	posts := make([]Row, 0, len(rows))
 	for _, row := range rows {

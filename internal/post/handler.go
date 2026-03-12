@@ -93,20 +93,54 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 // GetAllPostsResponse is the JSON response body for listing all posts.
 type GetAllPostsResponse struct {
-	Count int64 `json:"count"`
-	Posts []Row `json:"posts"`
+	Count  int   `json:"count"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+	Posts  []Row `json:"posts"`
 }
 
-// GetAllPosts handles requests to list all posts.
+// GetAllPosts handles paginated requests to list all posts.
 func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
 
-	posts, err := h.svc.GetAllPosts(r.Context())
+	var limit, offset int64
+	var err error
+
+	if limitStr != "" {
+		limit, err = strconv.ParseInt(limitStr, 10, 32)
+		if err != nil {
+			httpx.WriteError(w, http.StatusBadRequest, errors.New("invalid limit parameter"))
+			return
+		}
+	}
+
+	if offsetStr != "" {
+		offset, err = strconv.ParseInt(offsetStr, 10, 32)
+		if err != nil {
+			httpx.WriteError(w, http.StatusBadRequest, errors.New("invalid offset parameter"))
+			return
+		}
+	}
+
+	input := ListPostsInput{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	}
+
+	posts, err := h.svc.GetAllPosts(r.Context(), input)
 	if err != nil {
 		httpx.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, GetAllPostsResponse{Posts: posts, Count: int64(len(posts))})
+	normalized := NormalizeListInput(input)
+	httpx.WriteJSON(w, http.StatusOK, GetAllPostsResponse{
+		Posts:  posts,
+		Count:  len(posts),
+		Limit:  normalized.Limit,
+		Offset: normalized.Offset,
+	})
 }
 
 // GetPostByIDRequest is the URL parameter type for post ID lookups.

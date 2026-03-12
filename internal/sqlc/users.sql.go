@@ -51,7 +51,7 @@ FROM users u
 WHERE u.email = $1 AND u.is_active = TRUE
 `
 
-// for testing purpose we are getting al info
+// for testing purpose we are getting all info
 func (q *Queries) GetByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRow(ctx, getByEmail, email)
 	var i User

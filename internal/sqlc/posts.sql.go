@@ -39,7 +39,14 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 
 const getAllPosts = `-- name: GetAllPosts :many
 SELECT p.id, p.author_id, p.title, p.content, p.updated_at, p.created_at, u.username FROM posts p JOIN users u ON u.id = p.author_id
+ORDER BY p.created_at DESC
+LIMIT $1 OFFSET $2
 `
+
+type GetAllPostsParams struct {
+	Limit  int32
+	Offset int32
+}
 
 type GetAllPostsRow struct {
 	ID        int64
@@ -51,8 +58,8 @@ type GetAllPostsRow struct {
 	Username  string
 }
 
-func (q *Queries) GetAllPosts(ctx context.Context) ([]GetAllPostsRow, error) {
-	rows, err := q.db.Query(ctx, getAllPosts)
+func (q *Queries) GetAllPosts(ctx context.Context, arg GetAllPostsParams) ([]GetAllPostsRow, error) {
+	rows, err := q.db.Query(ctx, getAllPosts, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

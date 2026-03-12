@@ -11,15 +11,15 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// userRepository provides persistence operations backed by sqlc queries.
-type userRepository struct {
+// Repository provides user persistence operations backed by sqlc queries.
+type Repository struct {
 	q *sqlc.Queries
 }
 
 // NewUserRepository wires repository methods to generated sqlc query implementations.
-func NewUserRepository(q *sqlc.Queries) *userRepository {
+func NewUserRepository(q *sqlc.Queries) *Repository {
 	// Return a repository instance backed by generated sqlc queries.
-	return &userRepository{
+	return &Repository{
 		q: q,
 	}
 }
@@ -32,7 +32,7 @@ type CreateUserParams struct {
 }
 
 // CreateUser inserts a user and maps database constraint errors to domain errors.
-func (r *userRepository) CreateUser(ctx context.Context, input CreateUserParams) (User, error) {
+func (r *Repository) CreateUser(ctx context.Context, input CreateUserParams) (User, error) {
 	// Execute the insert query and capture the created row.
 	row, err := r.q.CreateUser(ctx, sqlc.CreateUserParams{
 		Email:        input.Email,
@@ -70,7 +70,7 @@ func (r *userRepository) CreateUser(ctx context.Context, input CreateUserParams)
 }
 
 // GetByEmail returns an active user by email or a domain not-found error.
-func (r *userRepository) GetByEmail(ctx context.Context, email string) (User, error) {
+func (r *Repository) GetByEmail(ctx context.Context, email string) (User, error) {
 	// Query one active user by email from the database.
 	row, err := r.q.GetByEmail(ctx, email)
 	if err != nil {

@@ -13,42 +13,43 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type PostHandler struct {
-	svc      *PostService
+// Handler maps HTTP requests to post service operations.
+type Handler struct {
+	svc      *Service
 	validate *validator.Validate
 	authMW   func(http.Handler) http.Handler
 }
 
-func NewPostHandler(svc *PostService, validate *validator.Validate, authMW func(http.Handler) http.Handler) *PostHandler {
+// NewPostHandler constructs a Handler with service, validator, and auth middleware dependencies.
+func NewPostHandler(svc *Service, validate *validator.Validate, authMW func(http.Handler) http.Handler) *Handler {
 
-	return &PostHandler{
+	return &Handler{
 		svc:      svc,
 		validate: validate,
 		authMW:   authMW,
 	}
 }
 
-func (h *PostHandler) Example(w http.ResponseWriter, r *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-}
-
+// CreatePostResponse is the JSON response body returned after a post is created.
 type CreatePostResponse struct {
 	ID        int64     `json:"id"`
-	AuthorId  int64     `json:"author_id"`
+	AuthorID  int64     `json:"author_id"`
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// CreatePostRequest is the expected JSON payload for creating a post.
 type CreatePostRequest struct {
 	Title   string `json:"title" validate:"required,min=1"`
 	Content string `json:"content" validate:"required,min=1"`
 }
 
-func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
+// CreatePost handles authenticated post creation requests.
+func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	// Get auth user
-	user, ok := user.AuthUserFromContext(r.Context())
+	authUser, ok := user.AuthUserFromContext(r.Context())
 	if !ok {
 		httpx.WriteError(w, http.StatusUnauthorized, errors.New("auth user can not found"))
 		return
@@ -70,7 +71,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	post, err := h.svc.CreatePost(r.Context(), CreatePostInput{
-		AuthorID: user.ID,
+		AuthorID: authUser.ID,
 		Title:    req.Title,
 		Content:  req.Content,
 	})
@@ -82,7 +83,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	httpx.WriteJSON(w, http.StatusCreated, CreatePostResponse{
 		ID:        post.ID,
-		AuthorId:  post.AuthorID,
+		AuthorID:  post.AuthorID,
 		Title:     post.Title,
 		Content:   post.Content,
 		CreatedAt: post.CreatedAt,
@@ -90,12 +91,14 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetAllPostsResponse is the JSON response body for listing all posts.
 type GetAllPostsResponse struct {
-	Count int64     `json:"count"`
-	Posts []PostRow `json:"posts"`
+	Count int64 `json:"count"`
+	Posts []Row `json:"posts"`
 }
 
-func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
+// GetAllPosts handles requests to list all posts.
+func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := h.svc.GetAllPosts(r.Context())
 	if err != nil {
@@ -106,21 +109,23 @@ func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, GetAllPostsResponse{Posts: posts, Count: int64(len(posts))})
 }
 
-type GetPostByIdRequest struct {
+// GetPostByIDRequest is the URL parameter type for post ID lookups.
+type GetPostByIDRequest struct {
 	ID int64 `json:"id"`
 }
 
-func (h *PostHandler) GetPostById(w http.ResponseWriter, r *http.Request) {
+// GetPostByID handles requests to fetch a single post by its ID.
+func (h *Handler) GetPostByID(w http.ResponseWriter, r *http.Request) {
 
-	id_str := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "id")
 
-	id, err := strconv.ParseInt(id_str, 10, 64)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		httpx.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	post, err := h.svc.GetPostById(r.Context(), id)
+	post, err := h.svc.GetPostByID(r.Context(), id)
 
 	if err != nil {
 		httpx.WriteError(w, http.StatusNotFound, err)
@@ -130,9 +135,10 @@ func (h *PostHandler) GetPostById(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, post)
 }
 
-func (h *PostHandler) Routes(r chi.Router) chi.Router {
+// Routes registers post HTTP routes under the provided chi router.
+func (h *Handler) Routes(r chi.Router) chi.Router {
 	r.Get("/", h.GetAllPosts)
-	r.Get("/{id}", h.GetPostById)
+	r.Get("/{id}", h.GetPostByID)
 	r.Group(func(r chi.Router) {
 		r.Use(h.authMW)
 		r.Post("/", h.CreatePost)

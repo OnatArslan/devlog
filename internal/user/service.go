@@ -12,20 +12,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// CREATING SERVICE STRUCT --- --- --- --- --- ---
-// userService contains business rules for user registration and authentication flows.
-type userService struct {
-	rep *userRepository
+// Service contains business rules for user registration and authentication flows.
+type Service struct {
+	rep *Repository
 }
 
 // NewUserService wires the service with its repository dependency.
-func NewUserService(rep *userRepository) *userService {
+func NewUserService(rep *Repository) *Service {
 	// Return a service instance bound to the repository implementation.
-	return &userService{
+	return &Service{
 		rep: rep,
 	}
 }
 
+// SignUpInput defines the fields required to register a new user.
 type SignUpInput struct {
 	Email    string
 	Username string
@@ -33,7 +33,7 @@ type SignUpInput struct {
 }
 
 // SignUp hashes the password and creates a new user record.
-func (s *userService) SignUp(ctx context.Context, input SignUpInput) (User, error) {
+func (s *Service) SignUp(ctx context.Context, input SignUpInput) (User, error) {
 	// Convert the plain password to bytes for bcrypt processing.
 	passwordByte := []byte(input.Password)
 
@@ -67,13 +67,14 @@ type CustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+// SignInInput defines the credentials required to authenticate a user.
 type SignInInput struct {
 	Email    string
 	Password string
 }
 
 // SignIn validates credentials and returns a signed short-lived JWT access token.
-func (s *userService) SignIn(ctx context.Context, input SignInInput) (SignInOutput, error) {
+func (s *Service) SignIn(ctx context.Context, input SignInInput) (SignInOutput, error) {
 	// Fetch the active user by email for credential verification.
 	user, err := s.rep.GetByEmail(ctx, input.Email)
 	if err != nil {
@@ -126,7 +127,8 @@ func (s *userService) SignIn(ctx context.Context, input SignInInput) (SignInOutp
 	}, nil
 }
 
-func (s *userService) GetMe(ctx context.Context, email string) (User, error) {
+// GetMe returns the full user profile for the given email address.
+func (s *Service) GetMe(ctx context.Context, email string) (User, error) {
 
 	user, err := s.rep.GetByEmail(ctx, email)
 	if err != nil {

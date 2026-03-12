@@ -5,49 +5,51 @@ import (
 	"fmt"
 )
 
-type PostService struct {
-	repo *PostRepository
+// Service contains business logic for post operations.
+type Service struct {
+	repo *Repository
 }
 
-func NewPostService(repo *PostRepository) *PostService {
-	return &PostService{
+// NewPostService creates a Service wired to the given repository.
+func NewPostService(repo *Repository) *Service {
+	return &Service{
 		repo: repo,
 	}
 }
 
+// CreatePostInput defines the fields required to create a new post.
 type CreatePostInput struct {
 	AuthorID int64
 	Title    string
 	Content  string
 }
 
-func (s *PostService) CreatePost(ctx context.Context, input CreatePostInput) (Post, error) {
+// CreatePost creates a new post and returns the persisted domain model.
+func (s *Service) CreatePost(ctx context.Context, input CreatePostInput) (Post, error) {
 
-	post, err := s.repo.CreatePost(ctx, CreatePostParams{
-		AuthorID: input.AuthorID,
-		Title:    input.Title,
-		Content:  input.Content,
-	})
+	post, err := s.repo.CreatePost(ctx, CreatePostParams(input))
 	if err != nil {
 		return Post{}, fmt.Errorf("create post service : %w", err)
 	}
 	return post, nil
 }
 
-func (s *PostService) GetAllPosts(ctx context.Context) ([]PostRow, error) {
+// GetAllPosts returns all posts with their author usernames.
+func (s *Service) GetAllPosts(ctx context.Context) ([]Row, error) {
 
 	posts, err := s.repo.GetAllPosts(ctx)
 	if err != nil {
-		return []PostRow{}, err
+		return []Row{}, err
 	}
 
 	return posts, nil
 }
 
-func (s *PostService) GetPostById(ctx context.Context, id int64) (PostRow, error) {
-	post, err := s.repo.GetPostById(ctx, id)
+// GetPostByID returns a single post with author username by ID.
+func (s *Service) GetPostByID(ctx context.Context, id int64) (Row, error) {
+	post, err := s.repo.GetPostByID(ctx, id)
 	if err != nil {
-		return PostRow{}, err
+		return Row{}, err
 	}
 
 	return post, nil

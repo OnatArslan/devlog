@@ -28,7 +28,7 @@ func AuthUserFromContext(ctx context.Context) (AuthUser, bool) {
 }
 
 // AuthMiddleware validates Bearer JWT tokens and injects auth user data into context.
-func (h *UserHandler) AuthMiddleware(next http.Handler) http.Handler {
+func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Read and validate the Authorization header format.
 		auth := r.Header.Get("Authorization")

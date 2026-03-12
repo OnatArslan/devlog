@@ -11,22 +11,21 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// UserHandler maps HTTP requests to user service operations.
-type UserHandler struct {
-	svc      *userService
+// Handler maps HTTP requests to user service operations.
+type Handler struct {
+	svc      *Service
 	validate *validator.Validate
 }
 
 // NewUserHandler constructs a handler with service and validator dependencies.
-func NewUserHandler(svc *userService, validate *validator.Validate) *UserHandler {
+func NewUserHandler(svc *Service, validate *validator.Validate) *Handler {
 	// Return an HTTP handler that delegates business logic to the service.
-	return &UserHandler{
+	return &Handler{
 		svc:      svc,
 		validate: validate,
 	}
 }
 
-// REGISTER ---------------------
 // SignUpRequest is the expected JSON payload for user registration.
 type SignUpRequest struct {
 	Email           string `json:"email" validate:"required,email"`
@@ -45,7 +44,7 @@ type SignUpResponse struct {
 }
 
 // SignUp handles user registration requests and writes a safe public user payload.
-func (h *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 	// Decode and validate the incoming JSON request body.
 	var req SignUpRequest
 	defer r.Body.Close()
@@ -108,7 +107,7 @@ type SignInUserResult struct {
 }
 
 // SignIn validates request input, authenticates credentials, and returns token payload.
-func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 	// Decode and validate signin credentials from request body.
 	var req SignInRequest
 
@@ -163,6 +162,7 @@ func (h *UserHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, signInResponse)
 }
 
+// GetMeResponse is the JSON response body for the authenticated user's profile.
 type GetMeResponse struct {
 	ID                 int64     `json:"id"`
 	Email              string    `json:"email"`
@@ -173,7 +173,8 @@ type GetMeResponse struct {
 	UpdatedAt          time.Time `json:"updated_at"`
 }
 
-func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+// GetMe returns the profile of the currently authenticated user.
+func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 
 	ctxUser, ok := AuthUserFromContext(r.Context())
 
@@ -207,7 +208,7 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 }
 
 // Routes registers user HTTP routes under the provided chi router.
-func (h *UserHandler) Routes(r chi.Router) chi.Router {
+func (h *Handler) Routes(r chi.Router) chi.Router {
 	// Register user auth endpoints on the provided router.
 	r.Post("/signup", h.SignUp)
 	r.Post("/signin", h.SignIn)
